@@ -1,0 +1,30 @@
+[package]
+name        = "ethos-aegis-sdk"
+version     = "1.0.0"
+edition     = "2021"
+description = "Rust SDK for the Ethos Aegis Sovereign Integrity Mesh"
+license     = "MIT"
+repository  = "https://github.com/ethos-aegis/ethos-aegis"
+keywords    = ["ai-safety", "llm-security", "prompt-injection"]
+
+[lib]
+name    = "ethos_aegis_sdk"
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+name = "aegis-guard"
+path = "src/bin/guard.rs"
+
+[dependencies]
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+# Optional PyO3 binding (compile with: cargo build --features pyo3-ext)
+pyo3        = { version = "0.21", features = ["auto-initialize"], optional = true }
+
+[dev-dependencies]
+# No extra deps — all tests use stdlib only
+
+[features]
+default   = []
+pyo3-ext  = ["pyo3"]

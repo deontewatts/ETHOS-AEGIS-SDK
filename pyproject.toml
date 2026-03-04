@@ -1,79 +1,31 @@
-# ── pyproject.toml — Ethos Aegis package configuration ───────────────────────
-# PEP 517/518/621 compliant. Used by pip, build, pytest, ruff, and mypy.
-
 [build-system]
 requires      = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
 [project]
-name            = "ethos-aegis"
-version         = "1.0.0"
-description     = "Sovereign Integrity Mesh — living, adaptive AI immune architecture"
-readme          = "README.md"
+name        = "ethos-aegis-sdk"
+version     = "1.0.0"
+description = "pip-installable Python client for the Ethos Aegis Sovereign Integrity Mesh"
+readme      = "README.md"
+license     = { text = "MIT" }
 requires-python = ">=3.10"
-license         = { text = "MIT" }
-authors         = [{ name = "The Ethos Aegis Project" }]
-keywords        = ["ai-safety", "prompt-injection", "llm-security", "adversarial-robustness"]
+keywords    = ["ai-safety", "llm-security", "prompt-injection", "ethos-aegis"]
 
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-    "Topic :: Security",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3 :: Only",
-]
-
-# Zero runtime dependencies — pure Python stdlib
-dependencies = []
+dependencies = []   # core has zero runtime dependencies
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4", "pytest-cov>=4.1", "pytest-xdist>=3.3", "ruff>=0.4", "mypy>=1.8"]
-fuzz = ["hypothesis>=6.100"]
-all = ["ethos-aegis[dev,fuzz]"]
-
-[project.scripts]
-aegis-demo = "scripts.demo:main"
+openai    = ["openai>=1.0"]
+anthropic = ["anthropic>=0.25"]
+mistral   = ["mistralai>=1.0"]
+gemini    = ["google-generativeai>=0.7"]
+vertex    = ["google-cloud-aiplatform>=1.50"]
+dev       = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.4", "mypy>=1.9"]
+all       = ["openai>=1.0", "anthropic>=0.25", "mistralai>=1.0", "google-generativeai>=0.7"]
 
 [project.urls]
-Homepage    = "https://github.com/ethos-aegis/ethos-aegis"
-Issues      = "https://github.com/ethos-aegis/ethos-aegis/issues"
-Changelog   = "https://github.com/ethos-aegis/ethos-aegis/releases"
+Repository = "https://github.com/ethos-aegis/ethos-aegis"
+Documentation = "https://github.com/ethos-aegis/ethos-aegis/tree/main/sdk/python"
 
-
-# ── Tool configuration ────────────────────────────────────────────────────────
-
-[tool.pytest.ini_options]
-testpaths   = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts     = "--tb=short -q"
-log_level   = "WARNING"
-
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-
-[tool.ruff.lint]
-select = ["E", "W", "F", "I", "UP", "B", "SIM"]
-ignore = [
-    "E501",    # line too long — handled by formatter
-    "B008",    # function calls in default arguments (common in dataclasses)
-    "SIM108",  # ternary operator — sometimes less readable
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]     # assert is fine in tests
-
-[tool.mypy]
-python_version          = "3.10"
-ignore_missing_imports  = true
-no_strict_optional      = true
-warn_unused_ignores     = true
-warn_redundant_casts    = true
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ethos_aegis_sdk*"]

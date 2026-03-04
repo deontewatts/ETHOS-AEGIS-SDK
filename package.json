@@ -1,0 +1,36 @@
+{
+  "name": "@ethos-aegis/sdk",
+  "version": "1.0.0",
+  "description": "Node.js SDK for the Ethos Aegis Sovereign Integrity Mesh — subprocess + HTTP transport",
+  "main": "src/index.js",
+  "types": "types/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./src/index.js",
+      "import": "./src/index.mjs"
+    }
+  },
+  "scripts": {
+    "test":    "node --test tests/",
+    "test:v":  "node --test --test-reporter=spec tests/",
+    "lint":    "eslint src/ --ext .js,.ts --max-warnings 0",
+    "build":   "echo 'No build step — pure JS SDK'"
+  },
+  "engines": { "node": ">=18" },
+  "license": "MIT",
+  "keywords": ["ai-safety", "llm-security", "ethos-aegis", "prompt-injection"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethos-aegis/ethos-aegis.git",
+    "directory": "sdk/node"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  },
+  "peerDependencies": {
+    "python3": "*"
+  },
+  "peerDependenciesMeta": {
+    "python3": { "optional": true }
+  }
+}
