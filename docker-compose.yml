@@ -1,0 +1,86 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║   E T H O S   A E G I S  —  D O C K E R   C O M P O S E                  ║
+# ║                                                                              ║
+# ║  Services:                                                                   ║
+# ║    test    — run 79-test quality gate (one-shot, exits 0/1)                 ║
+# ║    aegis   — production runtime (Python + Node.js + Go)                     ║
+# ║                                                                              ║
+# ║  Quick commands:                                                             ║
+# ║    make compose-test          # one-shot test gate                          ║
+# ║    docker compose up aegis    # start production runtime                    ║
+# ║    docker compose run test    # CI equivalent locally                       ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+services:
+
+  # ── Quality gate: exits 0 if all 79 tests pass, 1 on any failure ─────────────
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test-python          # stops at the test stage — never builds runtime
+      args:
+        PYTHON_VERSION: "3.12"
+        NODE_VERSION: "20"
+        GO_VERSION: "1.22"
+    image: ethos-aegis:test
+    container_name: ethos-aegis-test
+    command: ["python", "-m", "pytest", "tests/test_suite.py", "-v", "--tb=short"]
+    environment:
+      - AEGIS_LOG_LEVEL=WARNING
+      - PYTHONUNBUFFERED=1
+    profiles: [ci]    # only starts when explicitly requested: docker compose --profile ci up test
+
+  # ── Demo runner: runs the 7-adjudication demo script ──────────────────────────
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test-python
+      args:
+        PYTHON_VERSION: "3.12"
+    image: ethos-aegis:demo
+    container_name: ethos-aegis-demo
+    command: ["python", "scripts/demo.py", "--quiet"]
+    environment:
+      - AEGIS_LOG_LEVEL=ERROR
+    profiles: [demo]
+
+  # ── Production runtime ────────────────────────────────────────────────────────
+  aegis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        PYTHON_VERSION: "3.12"
+        NODE_VERSION: "20"
+        GO_VERSION: "1.22"
+    image: ethos-aegis:latest
+    container_name: ethos-aegis
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - AEGIS_ENV=production
+      - NODE_ENV=production
+      - PYTHONUNBUFFERED=1
+      - PORT=8080
+      # Mount secrets via env file — never bake into image
+      # OPENROUTER_API_KEY, AEGIS_PASSPHRASE, etc.
+    env_file:
+      - .env.production             # create from .env.example; gitignored
+    volumes:
+      # Persist audit ledger and threat archive between container restarts
+      - aegis-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    profiles: [prod]
+
+volumes:
+  aegis-data:
+    driver: local

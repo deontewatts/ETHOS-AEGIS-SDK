@@ -1,0 +1,20 @@
+# Ethos Aegis — Development + Testing Dependencies
+# Core runtime: ZERO external deps (stdlib only)
+# The packages below are for dev, testing, security scanning, and optional SDK adapters.
+
+# ── Testing & Linting ─────────────────────────────────────────────────────
+pytest>=8.0
+pytest-cov>=5.0
+ruff>=0.4
+mypy>=1.9
+
+# ── Security Scanning ────────────────────────────────────────────────────
+bandit[toml]>=1.7
+safety>=3.0
+
+# ── Optional: LLM Adapters (install what you need) ───────────────────────
+# pip install openai          # OpenAI + OpenRouter + Groq + Azure OpenAI
+# pip install anthropic       # Anthropic Claude
+# pip install mistralai       # Mistral
+# pip install google-generativeai  # Google Gemini
+# (GenericAdapter works with any endpoint via stdlib urllib — zero deps)
