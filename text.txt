@@ -1,0 +1,33 @@
+Let me build the full production-grade setup — workflow + agent script + setup guide.​​​​​​​​​​​​​​​​
+
+Here’s your full production-grade setup. 3 steps to go live:
+
+⚡ Deploy in 3 steps
+1. Add your secret → GitHub repo → Settings → Secrets → Actions → New secret
+	∙	Name: OPENAI_API_KEY / Value: your sk-... key
+2. Drop these files into each repo:
+
+your-repo/
+├── .github/workflows/ai-agent-fix.yml
+├── scripts/ai_agent.py
+├── scripts/requirements.txt
+└── AGENT_SETUP.md
+
+
+3. Push → agent runs automatically
+
+What you get
+
+
+
+|Feature         |Detail                                                           |
+|----------------|-----------------------------------------------------------------|
+|🐛 Auto bug fixes|GPT-4o rewrites broken files                                     |
+|📦 Dep updates   |npm/pip audit + minor version bumps                              |
+|🎨 Auto-format   |Black (Python) + Prettier (JS/TS)                                |
+|🔐 Security scan |`safety` + `npm audit` reports                                   |
+|💾 Auto-commit   |Signs commits as “NorCal Volley Intel AI Agent 🤖”                |
+|🎛 Manual mode   |Run from Actions tab with `full / bugs-only / refactor-only` etc.|
+|♾ Loop-safe     |Uses `[skip ci]` so the agent never triggers itself              |
+
+For multiple repos — read the “Reusable Workflow” section in AGENT_SETUP.md to define the workflow once and inherit it everywhere.​​​​​​​​​​​​​​​​
