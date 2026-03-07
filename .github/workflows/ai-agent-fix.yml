@@ -1,0 +1,158 @@
+name: 🤖 OpenAI Agent - Auto Fix & Upgrade
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      fix_mode:
+        description: 'Fix mode'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - deps-only
+          - bugs-only
+          - refactor-only
+          - structure-only
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ai-agent-fix:
+    name: 🧠 AI Agent Analysis & Fix
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Setup Node.js (for JS/TS projects)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+        continue-on-error: true
+
+      - name: 🔧 Install agent dependencies
+        run: |
+          pip install openai==1.35.0 gitpython==3.1.43 \
+            rich==13.7.1 pyyaml==6.0.1 requests==2.32.3 \
+            packaging==24.1 --quiet
+
+      - name: 🔍 Detect project type
+        id: detect
+        run: |
+          if [ -f "package.json" ]; then
+            echo "type=node" >> $GITHUB_OUTPUT
+          elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+            echo "type=python" >> $GITHUB_OUTPUT
+          elif [ -f "go.mod" ]; then
+            echo "type=go" >> $GITHUB_OUTPUT
+          else
+            echo "type=generic" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📊 Update Python deps (if Python project)
+        if: steps.detect.outputs.type == 'python'
+        run: |
+          pip install pip-upgrader pip-audit --quiet
+          pip-audit --fix --dry-run 2>/dev/null || true
+        continue-on-error: true
+
+      - name: 📊 Update Node deps (if Node project)
+        if: steps.detect.outputs.type == 'node'
+        run: |
+          npm install --prefer-offline 2>/dev/null || true
+          npx npm-check-updates --upgrade --target minor 2>/dev/null || true
+        continue-on-error: true
+
+      - name: 🤖 Run OpenAI Agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FIX_MODE: ${{ github.event.inputs.fix_mode || 'full' }}
+          REPO_NAME: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          PROJECT_TYPE: ${{ steps.detect.outputs.type }}
+        run: python scripts/ai_agent.py
+
+      - name: 🎨 Auto-format code
+        run: |
+          # Python formatting
+          if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+            pip install black isort --quiet
+            black . --line-length 100 2>/dev/null || true
+            isort . 2>/dev/null || true
+          fi
+          # JS/TS formatting
+          if [ -f "package.json" ] && command -v npx &> /dev/null; then
+            npx prettier --write "**/*.{js,ts,jsx,tsx,json,md}" 2>/dev/null || true
+          fi
+        continue-on-error: true
+
+      - name: 🔐 Security audit
+        run: |
+          if [ -f "requirements.txt" ]; then
+            pip install safety --quiet
+            safety check --json > .ai-agent/security-report.json 2>/dev/null || true
+          fi
+          if [ -f "package.json" ]; then
+            npm audit --json > .ai-agent/npm-audit.json 2>/dev/null || true
+          fi
+        continue-on-error: true
+
+      - name: 📝 Check for changes
+        id: git-check
+        run: |
+          git diff --quiet && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: 💾 Commit & push fixes
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config user.name "NorCal Volley Intel AI Agent 🤖"
+          git config user.email "ai-agent@norcalvolley.intel"
+          git add -A
+          git commit -m "🤖 AI Agent: auto-fix, deps update & refactor
+
+          Mode: ${{ github.event.inputs.fix_mode || 'full' }}
+          Project: ${{ steps.detect.outputs.type }}
+          Triggered by: ${{ github.actor }}
+          Ref: ${{ github.ref_name }}
+
+          Changes include:
+          - Dependency updates
+          - Bug fixes & code improvements
+          - Structure & refactor cleanup
+          - Auto-formatting applied
+
+          [skip ci]"
+          git push origin ${{ github.ref_name }}
+
+      - name: 📢 Post summary
+        if: always()
+        run: |
+          echo "## 🤖 AI Agent Run Complete" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Mode | ${{ github.event.inputs.fix_mode || 'full' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Project Type | ${{ steps.detect.outputs.type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Changes Made | ${{ steps.git-check.outputs.changed }} |" >> $GITHUB_STEP_SUMMARY
+          if [ -f ".ai-agent/report.md" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat .ai-agent/report.md >> $GITHUB_STEP_SUMMARY
+          fi

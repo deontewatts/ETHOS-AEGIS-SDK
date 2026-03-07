@@ -1,0 +1,5 @@
+.ai-agent/
+*.env
+.env*
+*_KEY.txt
+*_SECRET.txt
